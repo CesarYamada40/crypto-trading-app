@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Trading Bot</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+        }
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+        .card {
+            margin: 20px 0;
+        }
+        .table {
+            margin-top: 20px;
+        }
+        .positive {
+            background-color: #d4edda; /* Verde claro */
+            font-weight: bold;
+        }
+        .negative {
+            background-color: #f8d7da; /* Vermelho claro */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Crypto Trading Bot</h1>
+        <p>Atualização do valor do dólar: <strong id="dolar-value">R$ {{ dolar_value }}</strong></p>
+        <p>Última atualização: <span id="last-update">A cada 5 minutos</span></p>
+    </div>
+
+    <div class="container">
+        <h2>Top 10 Altcoins</h2>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Preço Atual (R$)</th>
+                            <th>Variação 24h (%)</th>
+                            <th>Volume Total (R$)</th>
+                            <th>Market Cap (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coin in top_altcoins %}
+                        <tr class="{% if coin.price_change_percentage_24h > 0 %}positive{% else %}negative{% endif %}">
+                            <td>{{ coin.name }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.current_price) }}</td>
+                            <td>{{ coin.price_change_percentage_24h }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.total_volume) }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.market_cap) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2>Top 10 Altcoins Mais Baratas</h2>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Preço Atual (R$)</th>
+                            <th>Variação 24h (%)</th>
+                            <th>Volume Total (R$)</th>
+                            <th>Market Cap (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coin in cheap_altcoins %}
+                        <tr class="{% if coin.price_change_percentage_24h > 0 %}positive{% else %}negative{% endif %}">
+                            <td>{{ coin.name }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.current_price) }}</td>
+                            <td>{{ coin.price_change_percentage_24h }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.total_volume) }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.market_cap) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2>Gainers nas Últimas 24 Horas</h2>
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Preço Atual (R$)</th>
+                            <th>Variação 24h (%)</th>
+                            <th>Volume Total (R$)</th>
+                            <th>Market Cap (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coin in gainers_24h %}
+                        <tr class="{% if coin.price_change_percentage_24h > 0 %}positive{% else %}negative{% endif %}">
+                            <td>{{ coin.name }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.current_price) }}</td>
+                            <td>{{ coin.price_change_percentage_24h }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.total_volume) }}</td>
+                            <td>R$ {{ '{:,.2f}'.format(coin.market_cap) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateData() {
+            fetch('/update_data')
+                .then(response => response.json())
+                .then(data => {
+                    // Atualiza o valor do dólar
+                    document.getElementById('dolar-value').innerText = 'R$ ' + data.dolar_value.toFixed(2);
+
+                    // Atualiza as tabelas de criptomoedas
+                    updateTables(data.top_coins);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function updateTables(coins) {
+            const topAltcoinsTable = document.querySelector('table tbody'); // Altere conforme necessário
+            topAltcoinsTable.innerHTML = ''; // Limpa a tabela atual
+
+            coins.forEach(coin => {
+                const row = document.createElement('tr');
+                row.className = coin.price_change_percentage_24h > 0 ? 'positive' : 'negative';
+                row.innerHTML = `
+                    <td>${coin.name}</td>
+                    <td>R$ ${coin.current_price.toFixed(2)}</td>
+                    <td>${coin.price_change_percentage_24h}</td>
+                    <td>R$ ${coin.total_volume.toFixed(2)}</td>
+                    <td>R$ ${coin.market_cap.toFixed(2)}</td>
+                `;
+                topAltcoinsTable.appendChild(row);
+            });
+        }
+
+        // Atualiza os dados a cada 5 minutos
+        setInterval(updateData, 300000); // 300000 ms = 5 minutos
+        // Chama a função uma vez ao carregar a página
+        updateData();
+    </script>
+</body>
+</html>
